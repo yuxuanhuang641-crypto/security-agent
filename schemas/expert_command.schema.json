@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contest.local/schemas/expert_command.schema.json",
+  "title": "ExpertCommand",
+  "type": "object",
+  "required": ["tool", "command", "status"],
+  "additionalProperties": true,
+  "properties": {
+    "tool": {
+      "type": "string",
+      "enum": ["nmap", "sqlmap"],
+      "description": "Security tool selected by the expert."
+    },
+    "command": {
+      "type": "string",
+      "description": "Command string passed to sandbox.execute(command). Empty only when status is not ready."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ready", "need_more_info", "blocked"],
+      "description": "ready means command can be executed; other statuses must not enter Execution."
+    },
+    "target": {
+      "type": "string",
+      "description": "Target IP, hostname, or URL."
+    },
+    "purpose": {
+      "type": "string",
+      "description": "Short human-readable reason for the command."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Required when status is need_more_info or blocked."
+    }
+  }
+}
