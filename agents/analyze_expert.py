@@ -20,7 +20,19 @@ def _as_text(value: Any, default: str = "") -> str:
 
 def _extract_evidence(stdout: str, stderr: str) -> list[str]:
     """Extract short, useful output snippets for the mock analysis result."""
-    keywords = ("open", "filtered", "closed", "error", "failed", "vulnerable")
+    keywords = (
+        "open",
+        "filtered",
+        "closed",
+        "error",
+        "failed",
+        "vulnerable",
+        "injectable",
+        "sql injection",
+        "need_more_info",
+        "blocked",
+        "isolation",
+    )
     evidence: list[str] = []
 
     for line in stdout.splitlines():
@@ -54,12 +66,77 @@ def analyze_expert_node(state: dict) -> dict:
     stderr = _as_text(execution_result.get("stderr"))
     exit_code = execution_result.get("exit_code")
     success = execution_result.get("success")
+    status = _as_text(execution_result.get("status")).lower()
 
     stdout_lower = stdout.lower()
     key_findings: list[dict[str, str]] = []
     next_steps: list[str] = []
 
-    if exit_code not in (0, None) or success is False:
+    if status == "blocked" or "blocked" in stdout_lower:
+        summary = "系统识别到疑似危险输入，当前任务已被拦截，未进入真实命令执行。"
+        risk_level = "unknown"
+        key_findings.append(
+            {
+                "title": "危险输入已拦截",
+                "evidence": "执行结果中出现 blocked 或策略拦截信息",
+                "recommendation": "要求用户提供明确授权范围，并通过沙箱白名单重新生成安全命令。",
+            }
+        )
+        next_steps.extend(
+            [
+                "建议保留拦截日志，便于后续审计。",
+                "建议由 Planner 或 Execution 节点继续强化命令白名单校验。",
+            ]
+        )
+    elif status == "need_more_info" or "need_more_info" in stdout_lower:
+        summary = "当前任务意图或目标信息不足，系统需要更多输入后才能继续分析。"
+        risk_level = "unknown"
+        key_findings.append(
+            {
+                "title": "需要补充任务信息",
+                "evidence": "执行结果中出现 need_more_info 或缺少目标信息提示",
+                "recommendation": "补充目标地址、端口、授权范围和期望检测类型后重新提交任务。",
+            }
+        )
+        next_steps.extend(
+            [
+                "建议前端提示用户补充目标和授权范围。",
+                "建议 Planner 生成澄清问题，而不是直接进入 Execution。",
+            ]
+        )
+    elif "sql injection" in stdout_lower or "injectable" in stdout_lower:
+        summary = "本次检测发现疑似 SQL 注入风险，需要在授权环境中进一步人工确认。"
+        risk_level = "high"
+        key_findings.append(
+            {
+                "title": "疑似 SQL 注入风险",
+                "evidence": "stdout 中出现 sql injection 或 injectable 字段",
+                "recommendation": "仅在授权靶场中复核参数过滤、预编译语句和后端日志，不进行未授权利用。",
+            }
+        )
+        next_steps.extend(
+            [
+                "建议确认该 URL 是否属于授权测试范围。",
+                "建议检查参数化查询、输入校验和错误回显配置。",
+            ]
+        )
+    elif "isolation" in stdout_lower or "task_id" in stdout_lower or "session" in stdout_lower:
+        summary = "本次并发/多用户 mock 检查显示任务状态具备隔离标识，暂未发现状态污染迹象。"
+        risk_level = "low"
+        key_findings.append(
+            {
+                "title": "任务状态隔离检查",
+                "evidence": "stdout 中出现 task_id、session 或 isolation 字段",
+                "recommendation": "后续后端联调时继续为每个任务保留 task_id 或 session_id。",
+            }
+        )
+        next_steps.extend(
+            [
+                "建议 C 同学在 FastAPI/LangGraph 状态中保留任务 ID。",
+                "建议前端展示任务 ID，便于多用户请求排查。",
+            ]
+        )
+    elif exit_code not in (0, None) or success is False:
         summary = "工具执行未成功完成，当前结果不足以形成明确安全结论。"
         risk_level = "unknown"
         key_findings.append(

@@ -1,101 +1,188 @@
 # API 与状态字段约定
 
-## 1. AgentState 建议字段
+本文档对齐 `security_agent_v2_containerized.zip` 中已经跑通的 v2 容器化后端，供 E 模块前端、测试用例和后续联调使用。
 
-| 字段 | 类型建议 | 含义 |
-| --- | --- | --- |
-| `user_input` | `str` | 用户原始输入。 |
-| `plan` | `dict \| list` | Planner 生成的任务计划，可包含步骤、专家类型和执行顺序。 |
-| `current_step` | `int` | 当前步骤编号。 |
-| `current_expert` | `str` | 当前专家类型，例如 `recon`、`exploit`、`analyze`、`report`。 |
-| `current_instruction` | `str` | 当前专家收到的任务指令。 |
-| `current_command` | `dict` | 专家生成的工具命令，建议包含 `tool` 和 `command`。 |
-| `execution_result` | `dict` | Execution 节点返回的工具执行结果。 |
-| `analysis_result` | `dict` | AnalyzeExpert 输出的结构化分析。 |
-| `final_report` | `str` | ReportExpert 输出的 Markdown 报告。 |
-| `messages` | `list` | 可选，用于多轮对话或状态追踪。 |
-| `task_status` | `str` | 任务状态，例如 `pending`、`running`、`success`、`failed`。 |
+## 1. POST /task
 
-`execution_result` 建议结构：
+v2 后端接口地址：
+
+```text
+http://127.0.0.1:8008/task
+```
+
+请求方法：
+
+```text
+POST
+```
+
+请求头：
+
+```text
+Content-Type: application/json; charset=utf-8
+```
+
+请求体：
 
 ```json
 {
-  "tool": "nmap",
-  "command": "nmap -sV -p 1100 127.0.0.1",
-  "stdout": "PORT     STATE SERVICE VERSION\n1100/tcp open  http    mock-service",
-  "stderr": "",
-  "exit_code": 0,
-  "success": true
+  "input_text": "请检查本地靶场 Juice Shop 服务是否可访问，目标为 http://range-juice-shop:3000，只允许进行连通性检查或端口识别。",
+  "thread_id": "demo"
 }
 ```
 
-`analysis_result` 建议结构：
+字段说明：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `input_text` | `str` | 是 | 用户输入的安全任务描述。v2 后端读取该字段作为 Planner 的初始输入。 |
+| `thread_id` | `str` | 否 | LangGraph/InMemorySaver 的会话 ID，默认可用 `demo` 或 `default`。用于多轮状态隔离。 |
+
+## 2. 成功返回格式
 
 ```json
 {
-  "summary": "本次扫描发现目标主机存在开放端口或可访问服务。",
-  "risk_level": "medium",
-  "key_findings": [
+  "status": "success",
+  "plan": {
+    "steps": [
+      {
+        "step_id": 1,
+        "expert": "recon",
+        "instruction": "扫描目标主机端口",
+        "tool_id": "nmap",
+        "params": {
+          "target": "range-juice-shop",
+          "args": "-sV -p 3000"
+        }
+      }
+    ]
+  },
+  "final_report": "# 安全评估报告\n...",
+  "execution_results": {
+    "tool_id": "nmap",
+    "command": "nmap -sV -p 3000 range-juice-shop",
+    "status": "success",
+    "output": "...",
+    "errors": ""
+  }
+}
+```
+
+字段说明：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `status` | `str` | 接口执行状态。成功时为 `success`。 |
+| `plan` | `dict` | Planner 生成的结构化计划，核心字段为 `steps`。 |
+| `final_report` | `str` | ReportExpert 生成的 Markdown 报告。 |
+| `execution_results` | `dict` | 后端响应中的工具执行结果字段。注意是复数形式。 |
+
+## 3. 失败返回格式
+
+```json
+{
+  "status": "failed",
+  "error_type": "ValueError",
+  "error": "错误信息",
+  "trace_tail": "最近几层 traceback"
+}
+```
+
+字段说明：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `status` | `str` | 失败时为 `failed`。 |
+| `error_type` | `str` | Python 异常类型，便于定位后端错误。 |
+| `error` | `str` | 简短错误信息。 |
+| `trace_tail` | `str` | 截断后的 traceback，便于联调排查。 |
+
+## 4. AgentState 内部字段
+
+v2 后端内部状态字段来自 `graph/state.py`，建议各模块按以下字段对齐：
+
+| 字段 | 类型建议 | 说明 |
+| --- | --- | --- |
+| `messages` | `list[AnyMessage]` | 全局消息记录，用于汇总执行过程。 |
+| `planner_messages` | `list[AnyMessage]` | Planner 的输入/输出消息队列。 |
+| `recon_messages` | `list[AnyMessage]` | ReconExpert 的消息队列。 |
+| `exploit_messages` | `list[AnyMessage]` | ExploitExpert 的消息队列。 |
+| `analyze_messages` | `list[AnyMessage]` | AnalyzeExpert 的消息队列。 |
+| `report_messages` | `list[AnyMessage]` | ReportExpert 的消息队列。 |
+| `recon_updated` | `bool` | 是否激活 ReconExpert。 |
+| `exploit_updated` | `bool` | 是否激活 ExploitExpert。 |
+| `analyze_updated` | `bool` | 是否激活 AnalyzeExpert。 |
+| `report_updated` | `bool` | 是否激活 ReportExpert。 |
+| `plan` | `dict` | Planner 输出，统一结构为 `{"steps": [...]}`。 |
+| `current_step` | `int` | 当前执行步骤索引。 |
+| `expert_output` | `dict` | 当前专家输出，通常包含 `tool_id` 和 `params`。 |
+| `generated_command` | `str` | ToolMapper 根据 `tool_id/params` 生成的命令字符串。 |
+| `execution_result` | `dict` | 内部 state 中的执行结果字段。 |
+| `final_report` | `str` | ReportExpert 输出的 Markdown 报告。 |
+
+命名注意：
+
+- 后端响应字段是 `execution_results`。
+- LangGraph 内部 state 字段是 `execution_result`。
+- 前端展示时应优先读取响应中的 `execution_results`，必要时兼容旧字段 `execution_result`。
+
+## 5. Planner 输出格式
+
+Planner 必须输出纯 JSON，核心结构如下：
+
+```json
+{
+  "steps": [
     {
-      "title": "发现开放端口",
-      "evidence": "stdout 中出现 open 字段",
-      "recommendation": "确认该端口对应服务是否为业务必要服务，并检查访问控制策略。"
+      "step_id": 1,
+      "expert": "recon",
+      "instruction": "扫描目标主机的 3000 端口",
+      "tool_id": "nmap",
+      "params": {
+        "target": "range-juice-shop",
+        "args": "-sV -p 3000"
+      }
     }
-  ],
-  "evidence": [
-    "1100/tcp open  http    mock-service"
-  ],
-  "next_steps": [
-    "建议结合服务版本进行进一步授权验证。",
-    "建议检查该端口的访问控制、暴露范围和最小化开放策略。"
   ]
 }
 ```
 
-## 2. POST /task 输入格式
+字段说明：
 
-```json
-{
-  "input": "扫描 127.0.0.1 的 1100 端口"
-}
-```
+| 字段 | 说明 |
+| --- | --- |
+| `expert` | 可选值包括 `recon`、`exploit`、`analyze`、`report`。 |
+| `tool_id` | 工具 ID，例如 `nmap`、`sqlmap`、`httpx`、`nuclei`。无需工具时可为 `null`。 |
+| `params.target` | 靶场目标。v2 推荐使用 `range-juice-shop`、`range-webgoat`、`range-dvwa`。 |
+| `params.args` | 工具参数，例如 `-sV -p 3000`。 |
 
-## 3. POST /task 返回格式
+## 6. 前端展示字段
 
-当前阶段可以先支持最终返回：
+`frontend/app.py` 需要展示以下内容：
 
-```json
-{
-  "task_status": "success",
-  "execution_result": {},
-  "analysis_result": {},
-  "final_report": "..."
-}
-```
+- 请求体：`input_text`、`thread_id`
+- 接口状态：`status`
+- 计划：`plan`
+- 执行结果：`execution_results`
+- 最终报告：`final_report`
+- 错误信息：`error_type`、`error`、`trace_tail`
 
-后续如果 C 同学实现 SSE 或 WebSocket，可扩展为事件流，例如按 `planning`、`executing`、`analyzing`、`reporting`、`done` 推送阶段状态。
+## 7. 联调说明
 
-## 4. 前端展示字段
+1. 按 v2 部署说明启动后端，确保接口可访问：
 
-`frontend/app.py` 需要展示以下字段：
+   ```text
+   http://127.0.0.1:8008/task
+   ```
 
-- `task_status`
-- `current_command`
-- `execution_result.stdout`
-- `execution_result.stderr`
-- `execution_result.exit_code`
-- `analysis_result.summary`
-- `analysis_result.risk_level`
-- `analysis_result.key_findings`
-- `final_report`
+2. 启动 E 模块测试前端：
 
-## 5. 联调说明
+   ```powershell
+   streamlit run frontend/app.py
+   ```
 
-当前前端使用 mock 数据；后续只需要把 mock state 替换为真实后端 API 返回值。
+3. 在前端选择测试用例，确认请求体为 `input_text/thread_id` 格式。
 
-建议联调步骤：
+4. 若返回 `status=success`，前端应展示 `plan`、`execution_results` 和 `final_report`。
 
-1. C 同学提供 `POST /task`，接收用户输入并返回约定字段。
-2. 前端将 `build_mock_state()` 替换为后端请求。
-3. 如果后端已经在 LangGraph 内部调用 AnalyzeExpert 和 ReportExpert，前端直接展示返回结果。
-4. 如果后端只返回 Execution 输出，则前端不建议自行分析，应该由后端统一调用 E 模块节点，避免状态逻辑分散。
+5. 若后端未启动或返回失败，前端应展示清晰错误信息，不应伪造成功结果。
