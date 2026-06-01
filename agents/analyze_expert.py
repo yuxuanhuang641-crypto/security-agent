@@ -1,9 +1,8 @@
-"""AnalyzeExpert node for the first-week security-agent demo.
+"""第一周演示用的分析专家节点。
 
-This module is a minimal rule-based placeholder for the E module. It does not
-execute commands or call external services. Later, the rule logic can be
-replaced by LLM-assisted analysis or richer parsers while keeping the same
-state-dictionary interface for LangGraph integration.
+本模块是 E 模块的最小可用规则分析占位实现，不执行系统命令，也不调用外部服务。
+后续可以在保持 `state` 字典接口不变的前提下，将规则逻辑替换为大模型辅助分析
+或更完整的工具输出解析器，方便接入 LangGraph。
 """
 
 from __future__ import annotations
@@ -12,14 +11,14 @@ from typing import Any
 
 
 def _as_text(value: Any, default: str = "") -> str:
-    """Return a stable string representation for optional state fields."""
+    """把可选字段稳定转换为字符串。"""
     if value is None:
         return default
     return str(value)
 
 
 def _extract_evidence(stdout: str, stderr: str) -> list[str]:
-    """Extract short, useful output snippets for the mock analysis result."""
+    """从工具输出中提取简短、可展示的关键证据片段。"""
     keywords = (
         "open",
         "filtered",
@@ -54,12 +53,10 @@ def _extract_evidence(stdout: str, stderr: str) -> list[str]:
 
 
 def analyze_expert_node(state: dict) -> dict:
-    """Analyze tool execution output and write structured findings to state.
+    """分析工具执行结果，并把结构化结论写入 `state["analysis_result"]`。
 
-    The function mimics a LangGraph node: it reads fields from ``state`` and
-    returns the updated state. This first-week version is intentionally simple
-    and rule-based, so it is safe for authorized lab demos and easy to replace
-    during later integration.
+    函数行为模拟 LangGraph 节点：从 `state` 读取约定字段，处理后返回更新后的
+    `state`。当前版本刻意保持简单，采用规则判断，适合授权靶场演示和后续替换。
     """
     execution_result = state.get("execution_result") or {}
     stdout = _as_text(execution_result.get("stdout"))
@@ -85,7 +82,7 @@ def analyze_expert_node(state: dict) -> dict:
         next_steps.extend(
             [
                 "建议保留拦截日志，便于后续审计。",
-                "建议由 Planner 或 Execution 节点继续强化命令白名单校验。",
+                "建议由规划节点或执行节点继续强化命令白名单校验。",
             ]
         )
     elif status == "need_more_info" or "need_more_info" in stdout_lower:
@@ -101,7 +98,7 @@ def analyze_expert_node(state: dict) -> dict:
         next_steps.extend(
             [
                 "建议前端提示用户补充目标和授权范围。",
-                "建议 Planner 生成澄清问题，而不是直接进入 Execution。",
+                "建议规划节点生成澄清问题，而不是直接进入执行节点。",
             ]
         )
     elif "sql injection" in stdout_lower or "injectable" in stdout_lower:
@@ -121,7 +118,7 @@ def analyze_expert_node(state: dict) -> dict:
             ]
         )
     elif "isolation" in stdout_lower or "task_id" in stdout_lower or "session" in stdout_lower:
-        summary = "本次并发/多用户 mock 检查显示任务状态具备隔离标识，暂未发现状态污染迹象。"
+        summary = "本次并发/多用户模拟检查显示任务状态具备隔离标识，暂未发现状态污染迹象。"
         risk_level = "low"
         key_findings.append(
             {
@@ -159,13 +156,13 @@ def analyze_expert_node(state: dict) -> dict:
             {
                 "title": "缺少有效输出",
                 "evidence": "stdout 为空",
-                "recommendation": "确认 Execution 节点是否正确捕获工具输出。",
+                "recommendation": "确认执行节点是否正确捕获工具输出。",
             }
         )
         next_steps.extend(
             [
                 "建议补充工具原始输出或执行上下文。",
-                "建议由 Planner 生成更明确的目标和参数。",
+                "建议由规划节点生成更明确的目标和参数。",
             ]
         )
     elif "open" in stdout_lower:

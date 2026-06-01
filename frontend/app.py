@@ -1,4 +1,4 @@
-"""Streamlit test frontend for the v2 containerized security-agent backend."""
+"""用于联调 v2 容器化后端的 Streamlit 测试前端。"""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ TEST_CASES = {
 
 
 def post_task(api_url: str, payload: dict, timeout: int = 120) -> tuple[int | None, dict | None, str | None]:
-    """Send a POST /task request to the v2 backend and return parsed JSON."""
+    """向 v2 后端发送 POST /task 请求，并返回解析后的 JSON。"""
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     request = Request(
         api_url,
@@ -47,7 +47,7 @@ def post_task(api_url: str, payload: dict, timeout: int = 120) -> tuple[int | No
 
 
 def render_response(response_json: dict) -> None:
-    """Render the v2 backend response in sections useful for manual testing."""
+    """按人工联调需要分区展示 v2 后端响应。"""
     status = response_json.get("status", "unknown")
     st.subheader("接口状态")
     if status == "success":
@@ -57,7 +57,7 @@ def render_response(response_json: dict) -> None:
     else:
         st.warning(status)
 
-    st.subheader("Planner 计划")
+    st.subheader("规划智能体计划")
     st.json(response_json.get("plan") or {})
 
     st.subheader("工具执行结果")

@@ -1,8 +1,7 @@
-"""ReportExpert node for the first-week security-agent demo.
+"""第一周演示用的报告专家节点。
 
-The node converts the current state dictionary into a Markdown report. It is a
-minimal, deterministic implementation intended for frontend and LangGraph
-integration tests.
+本节点把当前 `state` 字典整理成 Markdown 安全分析报告。当前实现保持简单、
+稳定、可预测，便于前端展示和 LangGraph 联调。
 """
 
 from __future__ import annotations
@@ -76,7 +75,7 @@ def _collect_recommendations(analysis_result: dict) -> list[str]:
 
 
 def report_expert_node(state: dict) -> dict:
-    """Generate a Markdown security analysis report into state["final_report"]."""
+    """生成 Markdown 安全分析报告，并写入 `state["final_report"]`。"""
     user_input = _as_text(state.get("user_input"))
     current_command = state.get("current_command") or {}
     execution_result = state.get("execution_result") or {}

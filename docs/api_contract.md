@@ -35,7 +35,7 @@ Content-Type: application/json; charset=utf-8
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `input_text` | `str` | 是 | 用户输入的安全任务描述。v2 后端读取该字段作为 Planner 的初始输入。 |
+| `input_text` | `str` | 是 | 用户输入的安全任务描述。v2 后端读取该字段作为规划智能体的初始输入。 |
 | `thread_id` | `str` | 否 | LangGraph/InMemorySaver 的会话 ID，默认可用 `demo` 或 `default`。用于多轮状态隔离。 |
 
 ## 2. 成功返回格式
@@ -73,8 +73,8 @@ Content-Type: application/json; charset=utf-8
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `status` | `str` | 接口执行状态。成功时为 `success`。 |
-| `plan` | `dict` | Planner 生成的结构化计划，核心字段为 `steps`。 |
-| `final_report` | `str` | ReportExpert 生成的 Markdown 报告。 |
+| `plan` | `dict` | 规划智能体生成的结构化计划，核心字段为 `steps`。 |
+| `final_report` | `str` | 报告专家生成的 Markdown 报告。 |
 | `execution_results` | `dict` | 后端响应中的工具执行结果字段。注意是复数形式。 |
 
 ## 3. 失败返回格式
@@ -104,21 +104,21 @@ v2 后端内部状态字段来自 `graph/state.py`，建议各模块按以下字
 | 字段 | 类型建议 | 说明 |
 | --- | --- | --- |
 | `messages` | `list[AnyMessage]` | 全局消息记录，用于汇总执行过程。 |
-| `planner_messages` | `list[AnyMessage]` | Planner 的输入/输出消息队列。 |
-| `recon_messages` | `list[AnyMessage]` | ReconExpert 的消息队列。 |
-| `exploit_messages` | `list[AnyMessage]` | ExploitExpert 的消息队列。 |
-| `analyze_messages` | `list[AnyMessage]` | AnalyzeExpert 的消息队列。 |
-| `report_messages` | `list[AnyMessage]` | ReportExpert 的消息队列。 |
-| `recon_updated` | `bool` | 是否激活 ReconExpert。 |
-| `exploit_updated` | `bool` | 是否激活 ExploitExpert。 |
-| `analyze_updated` | `bool` | 是否激活 AnalyzeExpert。 |
-| `report_updated` | `bool` | 是否激活 ReportExpert。 |
-| `plan` | `dict` | Planner 输出，统一结构为 `{"steps": [...]}`。 |
+| `planner_messages` | `list[AnyMessage]` | 规划智能体的输入/输出消息队列。 |
+| `recon_messages` | `list[AnyMessage]` | 侦察专家的消息队列。 |
+| `exploit_messages` | `list[AnyMessage]` | 验证专家的消息队列。 |
+| `analyze_messages` | `list[AnyMessage]` | 分析专家的消息队列。 |
+| `report_messages` | `list[AnyMessage]` | 报告专家的消息队列。 |
+| `recon_updated` | `bool` | 是否激活侦察专家。 |
+| `exploit_updated` | `bool` | 是否激活验证专家。 |
+| `analyze_updated` | `bool` | 是否激活分析专家。 |
+| `report_updated` | `bool` | 是否激活报告专家。 |
+| `plan` | `dict` | 规划智能体输出，统一结构为 `{"steps": [...]}`。 |
 | `current_step` | `int` | 当前执行步骤索引。 |
 | `expert_output` | `dict` | 当前专家输出，通常包含 `tool_id` 和 `params`。 |
 | `generated_command` | `str` | ToolMapper 根据 `tool_id/params` 生成的命令字符串。 |
 | `execution_result` | `dict` | 内部 state 中的执行结果字段。 |
-| `final_report` | `str` | ReportExpert 输出的 Markdown 报告。 |
+| `final_report` | `str` | 报告专家输出的 Markdown 报告。 |
 
 命名注意：
 
@@ -126,9 +126,9 @@ v2 后端内部状态字段来自 `graph/state.py`，建议各模块按以下字
 - LangGraph 内部 state 字段是 `execution_result`。
 - 前端展示时应优先读取响应中的 `execution_results`，必要时兼容旧字段 `execution_result`。
 
-## 5. Planner 输出格式
+## 5. 规划智能体输出格式
 
-Planner 必须输出纯 JSON，核心结构如下：
+规划智能体必须输出纯 JSON，核心结构如下：
 
 ```json
 {
