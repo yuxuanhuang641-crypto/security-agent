@@ -34,6 +34,7 @@ E 模块负责安全智能体链路中的分析、报告、前端展示和测试
 | `.gitignore` | 忽略 Python 缓存、虚拟环境和本地编辑器目录，并转为 UTF-8 以便 Git 正常识别。 |
 | `docs/e_task_delivery.md` | E 模块交付说明，便于队友联调和后续比赛报告整理。 |
 | `docs/api_contract.md` | E 模块与后端、LangGraph 状态流的接口字段约定。 |
+| `docs/planner_integration.md` | 规划智能体对接说明，解释 AI 安全审计版 Planner 的输入、输出和 E 侧展示方式。 |
 | `docs/daily_progress.md` | 每日进展记录模板，并记录 Day 1 初始化内容。 |
 | `tests/test_cases.md` | 第一周联调测试用例文档。 |
 | `README.md` | 项目简介、第一周目标、目录结构、E 模块说明和前端运行方式。 |
@@ -41,6 +42,7 @@ E 模块负责安全智能体链路中的分析、报告、前端展示和测试
 ## 4. 与其他同学模块的对接方式
 
 - 前端当前已经按 v2 后端的 `POST /task` 接口联调。
+- 若后端接入 AI 安全审计版规划智能体，前端可直接展示 `plan.workflow`、`plan.steps` 和 `template_id`。
 - 如果需要离线演示，可重新补充模拟数据模式，但默认不伪造后端成功结果。
 - 分析专家和报告专家的函数可以作为 LangGraph 节点被注册。
 - 输入输出都通过 `state` 字典传递。

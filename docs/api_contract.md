@@ -128,7 +128,7 @@ v2 后端内部状态字段来自 `graph/state.py`，建议各模块按以下字
 
 ## 5. 规划智能体输出格式
 
-规划智能体必须输出纯 JSON，核心结构如下：
+规划智能体必须输出纯 JSON。当前 v2 后端工具执行链路的核心结构如下：
 
 ```json
 {
@@ -155,6 +155,62 @@ v2 后端内部状态字段来自 `graph/state.py`，建议各模块按以下字
 | `tool_id` | 工具 ID，例如 `nmap`、`sqlmap`、`httpx`、`nuclei`。无需工具时可为 `null`。 |
 | `params.target` | 靶场目标。v2 推荐使用 `range-juice-shop`、`range-webgoat`、`range-dvwa`。 |
 | `params.args` | 工具参数，例如 `-sV -p 3000`。 |
+
+若接入 AI 安全审计版规划智能体，推荐保留顶层 `workflow`，并在步骤中增加 `template_id`：
+
+```json
+{
+  "workflow": "prompt-injection-test",
+  "steps": [
+    {
+      "step_id": 1,
+      "expert": "exploit",
+      "instruction": "使用提示词注入模板进行授权安全审计。",
+      "template_id": "PI-001",
+      "params": {
+        "target": "demo-ai-assistant",
+        "prompt": "授权测试用提示词",
+        "session_id": "demo",
+        "extra_args": {}
+      }
+    },
+    {
+      "step_id": 2,
+      "expert": "analyze",
+      "instruction": "分析模型响应并判断风险等级。",
+      "template_id": null,
+      "params": {
+        "target": "demo-ai-assistant",
+        "prompt": null,
+        "session_id": "demo",
+        "extra_args": {}
+      }
+    },
+    {
+      "step_id": 3,
+      "expert": "report",
+      "instruction": "汇总审计结果并生成报告。",
+      "template_id": null,
+      "params": {
+        "target": "demo-ai-assistant",
+        "prompt": null,
+        "session_id": "demo",
+        "extra_args": {}
+      }
+    }
+  ]
+}
+```
+
+AI 安全审计版新增字段说明：
+
+| 字段 | 说明 |
+| --- | --- |
+| `workflow` | 本次任务选择的工作流，例如 `prompt-injection-test`、`jailbreak-test`、`sensitive-leakage-test`、`comprehensive-ai-audit`。 |
+| `template_id` | 知识库中的检测模板 ID，例如 `PI-001`、`JB-001`、`SL-001`。没有固定模板时可为 `null`。 |
+| `params.prompt` | 授权安全测试使用的测试提示词或样本。 |
+| `params.session_id` | 与 `thread_id` 对齐的会话标识，便于多轮审计和状态隔离。 |
+| `params.extra_args` | 扩展参数，例如检测轮次、语言、模型版本、风险项开关等。 |
 
 ## 6. 前端展示字段
 
