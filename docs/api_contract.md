@@ -156,7 +156,7 @@ v2 后端内部状态字段来自 `graph/state.py`，建议各模块按以下字
 | `params.target` | 靶场目标。v2 推荐使用 `range-juice-shop`、`range-webgoat`、`range-dvwa`。 |
 | `params.args` | 工具参数，例如 `-sV -p 3000`。 |
 
-若接入 AI 安全审计版规划智能体，推荐保留顶层 `workflow`，并在步骤中增加 `template_id`：
+若接入 AI 安全审计版规划智能体，推荐保留顶层 `workflow`，并在步骤中增加 `template_id`。`template_id` 应优先引用 `knowledge_base/ai_safety_knowledge_base.json` 中的 snake_case 模板 ID：
 
 ```json
 {
@@ -166,7 +166,7 @@ v2 后端内部状态字段来自 `graph/state.py`，建议各模块按以下字
       "step_id": 1,
       "expert": "exploit",
       "instruction": "使用提示词注入模板进行授权安全审计。",
-      "template_id": "PI-001",
+      "template_id": "prompt_injection_basic",
       "params": {
         "target": "demo-ai-assistant",
         "prompt": "授权测试用提示词",
@@ -207,7 +207,7 @@ AI 安全审计版新增字段说明：
 | 字段 | 说明 |
 | --- | --- |
 | `workflow` | 本次任务选择的工作流，例如 `prompt-injection-test`、`jailbreak-test`、`sensitive-leakage-test`、`comprehensive-ai-audit`。 |
-| `template_id` | 知识库中的检测模板 ID，例如 `PI-001`、`JB-001`、`SL-001`。没有固定模板时可为 `null`。 |
+| `template_id` | 知识库中的检测模板 ID，例如 `prompt_injection_basic`、`rag_poisoning_basic`、`memory_cross_session_leakage`。没有固定模板时可为 `null`。 |
 | `params.prompt` | 授权安全测试使用的测试提示词或样本。 |
 | `params.session_id` | 与 `thread_id` 对齐的会话标识，便于多轮审计和状态隔离。 |
 | `params.extra_args` | 扩展参数，例如检测轮次、语言、模型版本、风险项开关等。 |

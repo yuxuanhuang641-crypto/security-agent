@@ -19,6 +19,7 @@
 - `agents/`：智能体节点。
 - `backend/`：后端接口。
 - `frontend/`：前端界面。
+- `knowledge_base/`：AI 安全审计知识库模板。
 - `prompts/`：提示词模板。
 - `sandbox/`：工具执行与沙箱。
 - `tests/`：测试用例。
@@ -33,6 +34,7 @@
 - `agents/report_expert.py`：报告专家最小可用节点，根据用户输入、执行命令、执行结果和分析摘要生成 Markdown `final_report`。
 - `frontend/app.py`：Streamlit v2 接口测试前端，向后端 `POST /task` 发送请求，并展示请求体、接口状态、计划、工具执行结果和最终报告。
 - `tests/test_cases.md`：第一周联调测试用例。
+- `tests/knowledge_base_test_cases.md`：知识库模板验证用例。
 - `docs/api_contract.md`：与 FastAPI 后端和 LangGraph 状态流对齐的字段约定。
 - `docs/e_task_delivery.md`：E 模块交付说明。
 

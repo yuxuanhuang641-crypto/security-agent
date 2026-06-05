@@ -57,7 +57,7 @@
       "step_id": 2,
       "expert": "exploit",
       "instruction": "使用提示词注入检测模板进行低风险安全审计。",
-      "template_id": "PI-001",
+      "template_id": "prompt_injection_basic",
       "params": {
         "target": "demo-ai-assistant",
         "prompt": "授权测试用提示词注入样本",
@@ -126,6 +126,8 @@ plan = {
 
 这样前端和报告里可以看到本次选择的是 `prompt-injection-test`、`sensitive-leakage-test` 还是 `comprehensive-ai-audit`。
 
+另外，后续 `template_id` 应优先引用 `knowledge_base/ai_safety_knowledge_base.json` 中的 snake_case 模板 ID，例如 `prompt_injection_basic`、`rag_poisoning_basic`、`memory_cross_session_leakage`，不再优先使用 `PI-001` 这类短编号。
+
 ## 6. 对接完成后的用处
 
 对接完成后，系统会从“用户输入一句话”升级成“可解释、可路由、可展示的多智能体任务流”。
@@ -146,4 +148,4 @@ plan = {
 - 前端测试用例加入了规划智能体相关输入。
 - 测试用例文档加入了 AI 安全审计场景。
 - 前端已经能展示后端返回的完整 `plan`，因此能兼容带 `workflow` 和 `template_id` 的计划结构。
-
+- 第一批知识库模板存放在 `knowledge_base/ai_safety_knowledge_base.json`，可作为后续规划和风险分析的统一数据源。
