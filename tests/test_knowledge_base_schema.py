@@ -21,12 +21,19 @@ REQUIRED_TEMPLATE_FIELDS = {
     "test_prompt",
     "expected_behavior",
     "risk_rules",
+    "scoring",
     "requires_env",
     "cleanup",
 }
 ALLOWED_SEVERITIES = {"critical", "high", "medium", "low"}
 ALLOWED_TEST_TYPES = {"single_turn", "multi_turn"}
 REQUIRED_RISK_LEVELS = {"high", "medium", "low"}
+REQUIRED_SCORING_FIELDS = {
+    "weight",
+    "pass_score",
+    "risk_score_mapping",
+    "evidence_requirements",
+}
 
 
 class KnowledgeBaseSchemaTest(unittest.TestCase):
@@ -40,12 +47,25 @@ class KnowledgeBaseSchemaTest(unittest.TestCase):
         self.assertIn("metadata", self.knowledge_base)
         self.assertIn("templates", self.knowledge_base)
         self.assertIsInstance(self.knowledge_base["metadata"], dict)
+        self.assertIn("scoring_model", self.knowledge_base["metadata"])
         self.assertIsInstance(self.templates, list)
         self.assertGreaterEqual(len(self.templates), 10)
+
+    def test_metadata_scoring_model_shape(self) -> None:
+        scoring_model = self.knowledge_base["metadata"]["scoring_model"]
+        self.assertEqual(scoring_model.get("score_range"), "0-100")
+        self.assertIsInstance(scoring_model.get("default_pass_score"), int)
+        self.assertTrue(0 <= scoring_model["default_pass_score"] <= 100)
+        self.assertTrue(REQUIRED_RISK_LEVELS <= scoring_model.get("risk_score_mapping", {}).keys())
+        self.assertTrue(ALLOWED_SEVERITIES <= scoring_model.get("severity_weights", {}).keys())
 
     def test_template_count_matches_metadata(self) -> None:
         metadata_count = self.knowledge_base["metadata"].get("template_count")
         self.assertEqual(metadata_count, len(self.templates))
+
+    def test_no_placeholder_garbled_text(self) -> None:
+        raw_text = json.dumps(self.knowledge_base, ensure_ascii=False)
+        self.assertNotIn("???", raw_text)
 
     def test_template_ids_are_unique_and_snake_case(self) -> None:
         template_ids = [template.get("template_id") for template in self.templates]
@@ -87,6 +107,22 @@ class KnowledgeBaseSchemaTest(unittest.TestCase):
                 self.assertTrue(rule["description"].strip())
                 for pattern in rule["patterns"]:
                     re.compile(pattern)
+
+    def test_scoring_fields_support_safety_assessment_model(self) -> None:
+        for template in self.templates:
+            scoring = template["scoring"]
+            missing_fields = REQUIRED_SCORING_FIELDS - scoring.keys()
+            self.assertFalse(missing_fields, f"{template['template_id']} 缺少评分字段: {missing_fields}")
+            self.assertIsInstance(scoring["weight"], (int, float))
+            self.assertGreater(scoring["weight"], 0)
+            self.assertIsInstance(scoring["pass_score"], int)
+            self.assertTrue(0 <= scoring["pass_score"] <= 100)
+            self.assertTrue(REQUIRED_RISK_LEVELS <= scoring["risk_score_mapping"].keys())
+            for score in scoring["risk_score_mapping"].values():
+                self.assertIsInstance(score, int)
+                self.assertTrue(0 <= score <= 100)
+            self.assertIsInstance(scoring["evidence_requirements"], list)
+            self.assertGreaterEqual(len(scoring["evidence_requirements"]), 2)
 
     def test_env_templates_have_cleanup_instruction(self) -> None:
         for template in self.templates:
