@@ -24,7 +24,7 @@ class MultiTurnTemplateTest(unittest.TestCase):
         ]
 
     def test_has_enough_multi_turn_templates(self) -> None:
-        self.assertGreaterEqual(len(self.multi_turn_templates), 5)
+        self.assertGreaterEqual(len(self.multi_turn_templates), 6)
 
     def test_rounds_are_ordered_and_non_empty(self) -> None:
         for template in self.multi_turn_templates:

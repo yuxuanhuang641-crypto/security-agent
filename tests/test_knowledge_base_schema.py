@@ -49,7 +49,7 @@ class KnowledgeBaseSchemaTest(unittest.TestCase):
         self.assertIsInstance(self.knowledge_base["metadata"], dict)
         self.assertIn("scoring_model", self.knowledge_base["metadata"])
         self.assertIsInstance(self.templates, list)
-        self.assertGreaterEqual(len(self.templates), 10)
+        self.assertGreaterEqual(len(self.templates), 25)
 
     def test_metadata_scoring_model_shape(self) -> None:
         scoring_model = self.knowledge_base["metadata"]["scoring_model"]
