@@ -35,9 +35,10 @@ E 模块负责安全智能体链路中的分析、报告、前端展示和测试
 | `docs/e_task_delivery.md` | E 模块交付说明，便于队友联调和后续比赛报告整理。 |
 | `docs/api_contract.md` | E 模块与后端、LangGraph 状态流的接口字段约定。 |
 | `docs/planner_integration.md` | 规划智能体对接说明，解释 AI 安全审计版 Planner 的输入、输出和 E 侧展示方式。 |
-| `knowledge_base/ai_safety_knowledge_base.json` | 第一批 AI 安全审计知识库模板，供规划、测试生成和风险分析后续复用。 |
-| `tests/knowledge_base_test_cases.md` | 知识库模板对应的人工验证用例，并记录安全评分字段验证方式。 |
-| `tests/test_knowledge_base_schema.py` | 知识库结构校验脚本，验证字段完整性、模板 ID 唯一性、评分模型字段、多轮配置和清理要求。 |
+| `knowledge_base/ai_safety_knowledge_base.json` | AI 安全审计知识库模板，包含 `score` 影响分、OWASP/ATLAS 映射、目标接口、优先级标签和 OpenClaw 专项模板。 |
+| `docs/knowledge_base_coverage_matrix.md` | 知识库覆盖矩阵，用于查看每个模板覆盖的安全框架、接口、影响分和优先级。 |
+| `tests/knowledge_base_test_cases.md` | 知识库模板对应的人工验证用例，并记录 `score` 影响分字段验证方式。 |
+| `tests/test_knowledge_base_schema.py` | 知识库结构校验脚本，验证字段完整性、模板 ID 唯一性、影响分字段、覆盖矩阵字段、多轮配置和清理要求。 |
 | `tests/test_multi_turn_templates.py` | 多轮模板专项测试，验证多轮数量、轮次顺序、跨会话重置和证据要求。 |
 | `docs/daily_progress.md` | 每日进展记录模板，并记录 Day 1 初始化内容。 |
 | `tests/test_cases.md` | 第一周联调测试用例文档。 |

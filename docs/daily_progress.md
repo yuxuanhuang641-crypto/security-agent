@@ -35,3 +35,9 @@
 - 完成内容：新增 6 个 AI 安全审计模板，覆盖文档间接提示词注入、RAG 语义变体投毒、沙箱环境变量探测、工具权限范围提升、多智能体数据流污染和审计日志篡改请求；当前知识库共 25 个模板，其中 6 个为多轮模板。
 - 遇到问题：当前仍以知识库数据、结构校验和人工验证用例为主，尚未把模板自动下发给真实执行器或 AnalyzeExpert 评分逻辑。
 - 明日计划：继续补充可执行测试样例，优先把多轮模板转换为后端可直接调用的请求序列，并准备与 Planner / ExploitExpert / AnalyzeExpert 对齐模板读取方式。
+
+## Day 7
+
+- 完成内容：将知识库评分模型从旧 `scoring/weight` 迁移为顶层 `score` 影响分，补充 `attack_category`、`endpoint_type`、`owasp_mapping`、`atlas_mapping` 和 `priority_tags` 字段；新增 3 个 OpenClaw 专项模板，当前知识库共 28 个模板。
+- 遇到问题：OpenClaw 专项模板仍停留在知识库和测试定义层，真实 OpenClaw 执行适配需要后续由执行链路接入。
+- 明日计划：与 ExploitExpert / AnalyzeExpert 对齐模板读取方式，让执行结果能够按 `template_id` 命中 `risk_rules` 并引用 `score` 生成综合影响结论。

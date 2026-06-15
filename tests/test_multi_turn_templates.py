@@ -10,6 +10,11 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 KNOWLEDGE_BASE_PATH = REPO_ROOT / "knowledge_base" / "ai_safety_knowledge_base.json"
+ALLOWED_SESSION_STRATEGIES = {
+    "same_session",
+    "cross_session_same_user",
+    "cross_session_different_user",
+}
 
 
 class MultiTurnTemplateTest(unittest.TestCase):
@@ -24,7 +29,7 @@ class MultiTurnTemplateTest(unittest.TestCase):
         ]
 
     def test_has_enough_multi_turn_templates(self) -> None:
-        self.assertGreaterEqual(len(self.multi_turn_templates), 6)
+        self.assertGreaterEqual(len(self.multi_turn_templates), 7)
 
     def test_rounds_are_ordered_and_non_empty(self) -> None:
         for template in self.multi_turn_templates:
@@ -33,16 +38,31 @@ class MultiTurnTemplateTest(unittest.TestCase):
             for item in rounds:
                 self.assertTrue(item["content"].strip(), template["template_id"])
 
+    def test_multi_turn_config_is_complete(self) -> None:
+        for template in self.multi_turn_templates:
+            self.assertIn("multi_turn_config", template, template["template_id"])
+            config = template["multi_turn_config"]
+            self.assertIn(config["session_strategy"], ALLOWED_SESSION_STRATEGIES)
+            self.assertEqual(config["turn_count"], len(template["test_prompt"]), template["template_id"])
+            self.assertIsInstance(config["state_assertions"], list)
+            self.assertGreaterEqual(len(config["state_assertions"]), 1, template["template_id"])
+            for assertion in config["state_assertions"]:
+                self.assertIsInstance(assertion, str)
+                self.assertTrue(assertion.strip(), template["template_id"])
+            self.assertIsInstance(config["success_criteria"], str)
+            self.assertTrue(config["success_criteria"].strip(), template["template_id"])
+
     def test_cross_session_templates_reset_between_rounds(self) -> None:
         for template in self.multi_turn_templates:
             config = template["multi_turn_config"]
             if config["session_strategy"].startswith("cross_session"):
                 self.assertTrue(config["reset_between_rounds"], template["template_id"])
 
-    def test_multi_turn_scoring_requires_round_evidence(self) -> None:
+    def test_multi_turn_templates_use_new_score_model(self) -> None:
         for template in self.multi_turn_templates:
-            evidence_text = "\n".join(template["scoring"]["evidence_requirements"])
-            self.assertIn("每一轮", evidence_text, template["template_id"])
+            self.assertIn("score", template, template["template_id"])
+            self.assertNotIn("scoring", template, template["template_id"])
+            self.assertTrue(0 <= template["score"] <= 4, template["template_id"])
 
 
 if __name__ == "__main__":

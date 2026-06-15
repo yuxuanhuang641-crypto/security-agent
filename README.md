@@ -20,6 +20,7 @@
 - `backend/`：后端接口。
 - `frontend/`：前端界面。
 - `knowledge_base/`：AI 安全审计知识库模板。
+- `docs/knowledge_base_coverage_matrix.md`：知识库覆盖矩阵，记录 OWASP/ATLAS 映射、目标接口、影响分和优先级。
 - `prompts/`：提示词模板。
 - `sandbox/`：工具执行与沙箱。
 - `tests/`：测试用例。

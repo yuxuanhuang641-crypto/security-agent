@@ -17,23 +17,24 @@ REQUIRED_TEMPLATE_FIELDS = {
     "name",
     "category",
     "severity",
+    "score",
+    "attack_category",
+    "endpoint_type",
+    "owasp_mapping",
+    "atlas_mapping",
+    "priority_tags",
     "test_type",
     "test_prompt",
     "expected_behavior",
     "risk_rules",
-    "scoring",
     "requires_env",
     "cleanup",
 }
+FORBIDDEN_TEMPLATE_FIELDS = {"scoring", "risk_level", "status"}
 ALLOWED_SEVERITIES = {"critical", "high", "medium", "low"}
 ALLOWED_TEST_TYPES = {"single_turn", "multi_turn"}
+ALLOWED_PRIORITY_LEVELS = {"P0", "P1", "P2", "P3"}
 REQUIRED_RISK_LEVELS = {"high", "medium", "low"}
-REQUIRED_SCORING_FIELDS = {
-    "weight",
-    "pass_score",
-    "risk_score_mapping",
-    "evidence_requirements",
-}
 
 
 class KnowledgeBaseSchemaTest(unittest.TestCase):
@@ -47,17 +48,22 @@ class KnowledgeBaseSchemaTest(unittest.TestCase):
         self.assertIn("metadata", self.knowledge_base)
         self.assertIn("templates", self.knowledge_base)
         self.assertIsInstance(self.knowledge_base["metadata"], dict)
-        self.assertIn("scoring_model", self.knowledge_base["metadata"])
+        self.assertIn("score_model", self.knowledge_base["metadata"])
+        self.assertNotIn("scoring_model", self.knowledge_base["metadata"])
         self.assertIsInstance(self.templates, list)
-        self.assertGreaterEqual(len(self.templates), 25)
+        self.assertGreaterEqual(len(self.templates), 28)
 
-    def test_metadata_scoring_model_shape(self) -> None:
-        scoring_model = self.knowledge_base["metadata"]["scoring_model"]
-        self.assertEqual(scoring_model.get("score_range"), "0-100")
-        self.assertIsInstance(scoring_model.get("default_pass_score"), int)
-        self.assertTrue(0 <= scoring_model["default_pass_score"] <= 100)
-        self.assertTrue(REQUIRED_RISK_LEVELS <= scoring_model.get("risk_score_mapping", {}).keys())
-        self.assertTrue(ALLOWED_SEVERITIES <= scoring_model.get("severity_weights", {}).keys())
+    def test_metadata_score_model_shape(self) -> None:
+        score_model = self.knowledge_base["metadata"]["score_model"]
+        self.assertEqual(score_model.get("score_range"), "0-4")
+        self.assertIsInstance(score_model.get("score_meaning"), str)
+        self.assertTrue(score_model["score_meaning"].strip())
+        levels = score_model.get("levels", {})
+        self.assertEqual(set(levels.keys()), {"0", "1", "2", "3", "4"})
+        for description in levels.values():
+            self.assertIsInstance(description, str)
+            self.assertTrue(description.strip())
+        self.assertIsInstance(score_model.get("aggregation_note"), str)
 
     def test_template_count_matches_metadata(self) -> None:
         metadata_count = self.knowledge_base["metadata"].get("template_count")
@@ -74,15 +80,36 @@ class KnowledgeBaseSchemaTest(unittest.TestCase):
             self.assertIsInstance(template_id, str)
             self.assertRegex(template_id, r"^[a-z][a-z0-9_]*$")
 
-    def test_required_template_fields_exist(self) -> None:
+    def test_required_template_fields_exist_and_old_static_fields_removed(self) -> None:
         for template in self.templates:
             missing_fields = REQUIRED_TEMPLATE_FIELDS - template.keys()
             self.assertFalse(missing_fields, f"{template.get('template_id')} 缺少字段: {missing_fields}")
+            forbidden_fields = FORBIDDEN_TEMPLATE_FIELDS & template.keys()
+            self.assertFalse(forbidden_fields, f"{template.get('template_id')} 仍包含旧字段: {forbidden_fields}")
 
     def test_severity_and_test_type_values_are_valid(self) -> None:
         for template in self.templates:
             self.assertIn(template["severity"], ALLOWED_SEVERITIES)
             self.assertIn(template["test_type"], ALLOWED_TEST_TYPES)
+
+    def test_score_and_coverage_fields_are_valid(self) -> None:
+        for template in self.templates:
+            self.assertIs(type(template["score"]), int, template["template_id"])
+            self.assertTrue(0 <= template["score"] <= 4, template["template_id"])
+            self.assertIsInstance(template["attack_category"], str)
+            self.assertTrue(template["attack_category"].strip(), template["template_id"])
+            self.assertIsInstance(template["endpoint_type"], str)
+            self.assertTrue(template["endpoint_type"].startswith("/"), template["template_id"])
+
+            for field in ("owasp_mapping", "atlas_mapping", "priority_tags"):
+                self.assertIsInstance(template[field], list, template["template_id"])
+                self.assertGreaterEqual(len(template[field]), 1, template["template_id"])
+                for item in template[field]:
+                    self.assertIsInstance(item, str)
+                    self.assertTrue(item.strip(), template["template_id"])
+
+            priority_levels = set(template["priority_tags"]) & ALLOWED_PRIORITY_LEVELS
+            self.assertTrue(priority_levels, template["template_id"])
 
     def test_test_prompt_shape_matches_test_type(self) -> None:
         for template in self.templates:
@@ -108,22 +135,6 @@ class KnowledgeBaseSchemaTest(unittest.TestCase):
                 for pattern in rule["patterns"]:
                     re.compile(pattern)
 
-    def test_scoring_fields_support_safety_assessment_model(self) -> None:
-        for template in self.templates:
-            scoring = template["scoring"]
-            missing_fields = REQUIRED_SCORING_FIELDS - scoring.keys()
-            self.assertFalse(missing_fields, f"{template['template_id']} 缺少评分字段: {missing_fields}")
-            self.assertIsInstance(scoring["weight"], (int, float))
-            self.assertGreater(scoring["weight"], 0)
-            self.assertIsInstance(scoring["pass_score"], int)
-            self.assertTrue(0 <= scoring["pass_score"] <= 100)
-            self.assertTrue(REQUIRED_RISK_LEVELS <= scoring["risk_score_mapping"].keys())
-            for score in scoring["risk_score_mapping"].values():
-                self.assertIsInstance(score, int)
-                self.assertTrue(0 <= score <= 100)
-            self.assertIsInstance(scoring["evidence_requirements"], list)
-            self.assertGreaterEqual(len(scoring["evidence_requirements"]), 2)
-
     def test_env_templates_have_cleanup_instruction(self) -> None:
         for template in self.templates:
             cleanup = template["cleanup"]
@@ -132,6 +143,17 @@ class KnowledgeBaseSchemaTest(unittest.TestCase):
             if template["requires_env"]:
                 self.assertTrue(cleanup["required"], template["template_id"])
                 self.assertTrue(cleanup["instruction"].strip(), template["template_id"])
+
+    def test_openclaw_special_templates_exist(self) -> None:
+        openclaw_templates = [
+            template
+            for template in self.templates
+            if template["template_id"].startswith("openclaw_")
+        ]
+        self.assertGreaterEqual(len(openclaw_templates), 3)
+        for template in openclaw_templates:
+            self.assertTrue(template["requires_env"], template["template_id"])
+            self.assertIn("OpenClaw", template["priority_tags"], template["template_id"])
 
 
 if __name__ == "__main__":
