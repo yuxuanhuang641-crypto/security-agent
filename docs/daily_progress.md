@@ -41,3 +41,9 @@
 - 完成内容：将知识库评分模型从旧 `scoring/weight` 迁移为顶层 `score` 影响分，补充 `attack_category`、`endpoint_type`、`owasp_mapping`、`atlas_mapping` 和 `priority_tags` 字段；新增 3 个 OpenClaw 专项模板，当前知识库共 28 个模板。
 - 遇到问题：OpenClaw 专项模板仍停留在知识库和测试定义层，真实 OpenClaw 执行适配需要后续由执行链路接入。
 - 明日计划：与 ExploitExpert / AnalyzeExpert 对齐模板读取方式，让执行结果能够按 `template_id` 命中 `risk_rules` 并引用 `score` 生成综合影响结论。
+
+## Day 8
+
+- 完成内容：根据揭榜挂帅逆向分析分工，新增逆向分析端到端测试用例文档，覆盖基础二进制信息分析、深度危险函数分析、动态行为跟踪和哈希/口令样本分析；前端测试页面新增 REV 用例入口。
+- 遇到问题：当前仓库尚未包含 `reverse_expert`、`graph/workflow.py` 或逆向工具执行链路，本轮只完成 E 侧测试与展示准备。
+- 明日计划：等待 Planner、ReverseExpert、Execution 和沙箱工具链完成集成后，用前端 REV 用例进行端到端验证，并记录实际返回结果。

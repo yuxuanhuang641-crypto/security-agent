@@ -29,7 +29,7 @@ E 模块负责安全智能体链路中的分析、报告、前端展示和测试
 | `AGENTS.md` | 仓库级 AI 开发规范，说明项目背景、开发边界、代码规范和文档规范。 |
 | `agents/analyze_expert.py` | 分析专家最小可用节点，基于模拟/规则生成 `analysis_result`。 |
 | `agents/report_expert.py` | 报告专家最小可用节点，根据 `state` 生成 Markdown `final_report`。 |
-| `frontend/app.py` | Streamlit v2 接口测试前端，调用后端 `POST /task` 并展示返回结果。 |
+| `frontend/app.py` | Streamlit v2 接口测试前端，调用后端 `POST /task` 并展示返回结果；已加入逆向分析 REV 联调用例入口。 |
 | `requirements.txt` | 当前前端演示所需依赖。 |
 | `.gitignore` | 忽略 Python 缓存、虚拟环境和本地编辑器目录，并转为 UTF-8 以便 Git 正常识别。 |
 | `docs/e_task_delivery.md` | E 模块交付说明，便于队友联调和后续比赛报告整理。 |
@@ -41,7 +41,9 @@ E 模块负责安全智能体链路中的分析、报告、前端展示和测试
 | `tests/test_knowledge_base_schema.py` | 知识库结构校验脚本，验证字段完整性、模板 ID 唯一性、影响分字段、覆盖矩阵字段、多轮配置和清理要求。 |
 | `tests/test_multi_turn_templates.py` | 多轮模板专项测试，验证多轮数量、轮次顺序、跨会话重置和证据要求。 |
 | `docs/daily_progress.md` | 每日进展记录模板，并记录 Day 1 初始化内容。 |
-| `tests/test_cases.md` | 第一周联调测试用例文档。 |
+| `tests/test_cases.md` | 联调测试用例文档，包含 v2 基础用例、AI 安全审计用例和逆向分析场景用例。 |
+| `tests/reverse_e2e_test_cases.md` | 逆向分析场景端到端测试用例，覆盖基础分析、深度分析、动态跟踪和哈希样本分析。 |
+| `docs/reverse_integration.md` | 逆向分析场景对接说明，记录 E 侧对 Planner、ReverseExpert、Execution、Analyze 和 Report 的联调期望。 |
 | `README.md` | 项目简介、第一周目标、目录结构、E 模块说明和前端运行方式。 |
 
 ## 4. 与其他同学模块的对接方式
