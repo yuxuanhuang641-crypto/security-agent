@@ -131,37 +131,117 @@ def apply_page_style() -> None:
     st.markdown(
         """
         <style>
+        :root {
+            --tech-blue: #2563eb;
+            --tech-blue-dark: #1d4ed8;
+            --tech-cyan: #06b6d4;
+            --panel-border: #bfdbfe;
+            --panel-bg: #f8fbff;
+            --soft-blue: #eff6ff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+        }
+        .stApp {
+            background:
+                linear-gradient(180deg, #f8fbff 0%, #ffffff 34%, #f8fafc 100%);
+        }
         .main .block-container {
             padding-top: 1.4rem;
             padding-bottom: 2rem;
             max-width: 1320px;
         }
+        section[data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #eff6ff 0%, #ffffff 56%);
+            border-right: 1px solid #dbeafe;
+        }
+        section[data-testid="stSidebar"] h2,
+        section[data-testid="stSidebar"] label {
+            color: var(--text-main);
+        }
+        .page-hero {
+            border: 1px solid var(--panel-border);
+            border-left: 5px solid var(--tech-blue);
+            border-radius: 8px;
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
+            background:
+                linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(6, 182, 212, 0.08) 52%, #ffffff 100%);
+            box-shadow: 0 14px 36px rgba(37, 99, 235, 0.08);
+        }
+        .page-hero h1 {
+            color: #0f1f3d;
+            font-size: 1.95rem;
+            line-height: 1.2;
+            margin: 0 0 0.35rem 0;
+            letter-spacing: 0;
+        }
+        .page-hero p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.95rem;
+        }
         div[data-testid="stMetric"] {
-            border: 1px solid #e5e7eb;
+            border: 1px solid #dbeafe;
             border-radius: 8px;
             padding: 0.7rem 0.9rem;
-            background: #ffffff;
+            background: linear-gradient(180deg, #ffffff 0%, var(--soft-blue) 100%);
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
         }
         div[data-testid="stMetric"] label {
-            color: #475569;
+            color: var(--text-muted);
             font-size: 0.78rem;
         }
+        div[data-testid="stMetricValue"] {
+            color: var(--tech-blue-dark);
+        }
         .case-meta {
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--panel-border);
+            border-left: 4px solid var(--tech-cyan);
             border-radius: 8px;
             padding: 0.8rem 0.9rem;
-            background: #f8fafc;
+            background: linear-gradient(180deg, #ffffff 0%, var(--panel-bg) 100%);
             line-height: 1.55;
+            box-shadow: 0 10px 26px rgba(14, 165, 233, 0.08);
+        }
+        .case-meta strong {
+            color: var(--tech-blue-dark);
         }
         .section-note {
-            color: #64748b;
+            color: var(--tech-blue-dark);
             font-size: 0.9rem;
+            font-weight: 600;
         }
         .stTabs [data-baseweb="tab-list"] {
             gap: 0.25rem;
+            border-bottom: 1px solid #dbeafe;
         }
         .stTabs [data-baseweb="tab"] {
             padding: 0.5rem 0.8rem;
+            color: var(--text-muted);
+        }
+        .stTabs [aria-selected="true"] {
+            color: var(--tech-blue-dark);
+            border-bottom-color: var(--tech-blue);
+        }
+        .stButton > button[kind="primary"] {
+            border: 1px solid var(--tech-blue-dark);
+            background: linear-gradient(135deg, var(--tech-blue) 0%, var(--tech-cyan) 100%);
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+        }
+        .stButton > button[kind="primary"]:hover {
+            border-color: #1e40af;
+            filter: brightness(0.98);
+        }
+        div[data-baseweb="select"] > div,
+        textarea,
+        input {
+            border-color: #c7d2fe;
+        }
+        div[data-baseweb="select"] > div:focus-within,
+        textarea:focus,
+        input:focus {
+            border-color: var(--tech-blue);
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.22);
         }
         </style>
         """,
@@ -317,8 +397,15 @@ def main() -> None:
     st.set_page_config(page_title="security-agent 联调控制台", layout="wide")
     apply_page_style()
 
-    st.title("security-agent 联调控制台")
-    st.caption("POST /task · Planner 路由 · 工具执行 · 分析报告")
+    st.markdown(
+        """
+        <div class="page-hero">
+            <h1>security-agent 联调控制台</h1>
+            <p>POST /task · Planner 路由 · 工具执行 · 分析报告 · 逆向分析展示入口</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     groups = ["逆向分析", "AI 安全审计", "基础联调", "全部"]
 
